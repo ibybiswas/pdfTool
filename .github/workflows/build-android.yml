@@ -41,13 +41,28 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         working-directory: ./android
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean assembleRelease \
-            -Pandroid.injected.signing.store.file=${{ env.KEYSTORE_PATH }} \
-            -Pandroid.injected.signing.store.password=${{ env.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ env.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ env.KEY_PASSWORD }} \
-            --no-daemon
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew clean assembleRelease \
+              -Pandroid.injected.signing.store.file=${{ env.KEYSTORE_PATH }} \
+              -Pandroid.injected.signing.store.password=${{ env.KEYSTORE_PASSWORD }} \
+              -Pandroid.injected.signing.key.alias=${{ env.KEY_ALIAS }} \
+              -Pandroid.injected.signing.key.password=${{ env.KEY_PASSWORD }} \
+              --no-daemon
+          else
+            echo "./gradlew not found in android/, installing Gradle and using system gradle"
+            sudo apt-get update && sudo apt-get install -y wget unzip
+            wget https://services.gradle.org/distributions/gradle-8.2-bin.zip -P /tmp
+            unzip -q /tmp/gradle-8.2-bin.zip -d /tmp
+            export GRADLE_HOME=/tmp/gradle-8.2
+            export PATH="$GRADLE_HOME/bin:$PATH"
+            /tmp/gradle-8.2/bin/gradle clean assembleRelease \
+              -Pandroid.injected.signing.store.file=${{ env.KEYSTORE_PATH }} \
+              -Pandroid.injected.signing.store.password=${{ env.KEYSTORE_PASSWORD }} \
+              -Pandroid.injected.signing.key.alias=${{ env.KEY_ALIAS }} \
+              -Pandroid.injected.signing.key.password=${{ env.KEY_PASSWORD }} \
+              --no-daemon
+          fi
 
       - name: Find and rename APK
         working-directory: ./android
